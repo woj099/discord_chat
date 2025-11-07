@@ -6,20 +6,10 @@ from math import e, inf
 import discord
 from typing import Optional
 import ollama
-
-# from git.file import file_manager
-# ['qwen3:4b',"deepseek-r1:14b"][0]
-
 from file_manager import File
-
 
 Rile = File("file_manager", "logging_folder", "log_file")
 game_info = File("game")
-
-
-
-# Rile.save("data", "dataname", "txt", "a")
-
 Rile.save("", "stat_append", "txt")
 
 file_name = game_info.every_file(2)
@@ -27,15 +17,16 @@ file_name = game_info.every_file(2)
 
 
 # memory = File()
-memory = [{'role': 'system', 'content': "You are a DM in a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder."}]
+memory = [{'role': 'system', 'content': "You are a DM in a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder. after each fight you must tell what items and stats the user gained. there is a second bot that will keep track of the user's stats and inventory. you must inform the user of any changes to their stats or inventory in your responses."}]
 
 
 
 stats = [
     {"level": 0},
     {"exp_now": 0},
-    {"exp_max": 1},
+    {"exp_to_next_level": 1},
     {"class": None},
+    {"divinity": 0},
     {"health": 100},
     {"max_health":100},
     {"mana": 10},
@@ -44,9 +35,10 @@ stats = [
 inventory = [
     {"platinum": 0},
     {"gold": 0},
-    {"silver": 1},
+    {"silver": 0},
     {"bronze": 34},
-    {"iron sword": "basic iron sword"}
+    {"iron sword": "basic iron sword"},
+    {"basic clothes": "worn out clothes"},
     ]
 
 
@@ -83,7 +75,18 @@ def stasts_extract(text: str) -> Optional[str]:
         print(f"Error extracting stats and inventory: {e}")
         return None
 
-
+def information_extract(text: str) -> Optional[str]:
+    response = ollama.chat(
+        model="deepseek-r1:14b",
+        messages=[{"role": "system", "content": "Extract any information about locations, characters, enemies, or items mentioned in the following text. The output should a CSV file with the following format: '[Place/character/enemy] [information],[Place/character/enemy] [information],...'"},
+                  {"role": "user", "content": text}]
+    )
+    response_content = response['message']['content']
+    data = ",".split(response_content)
+    for each in range(len(data)):
+        info = " ".split(data[each])
+        game_info.save(info[1], info[0], "txt", "w")
+    # add the possibility for the main bot to retrieve this information by reading files if the response mentions it
 def ask_ai(message):
     if len(memory) > 20:
         memory.pop(2)
