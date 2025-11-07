@@ -2,9 +2,8 @@
 # import os
 #   #Add the path to your file_manager package
 # sys.path.append('/home/admin/Projects/git/file')  # The directory containing file_manager folder
-from math import inf
+from math import e, inf
 import discord
-import logging
 from typing import Optional
 import ollama
 
@@ -28,14 +27,15 @@ file_name = game_info.every_file(2)
 
 
 # memory = File()
-memory = [{'role': 'system', 'content': "You are a DM in a medival fantasy world. user choses class at level 20 and every 20 levels can evolve class. if you want to change HP level or inventory use |stat -13 health| or |inv +8 arrows|"}]
+memory = [{'role': 'system', 'content': "You are a DM in a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder."}]
 
 
-exit()
+
 stats = [
     {"level": 0},
     {"exp_now": 0},
     {"exp_max": 1},
+    {"class": None},
     {"health": 100},
     {"max_health":100},
     {"mana": 10},
@@ -66,12 +66,12 @@ def stasts_extract(text: str) -> Optional[str]:
         for item in data:
             info = " ".split(item)
             for each in stats:
-                if info[0] is "stat":
+                if info[0] == "stat":
                     for each in range(len(stats)):
                         name = info[1]
                         if name == stats[each][name]:
                             stats[each][name] = stats[each][name] + int(info[2])
-                if info[0] is "inv":
+                if info[0] == "inv":
                     for each in inventory:
                         name = info[1]
                         if name == inventory[each][name]:
@@ -89,30 +89,33 @@ def ask_ai(message):
         memory.pop(2)
     memory.pop(1)
     memory.insert(1,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}"})
+    memory.append({'role': 'user', 'content': message})
     response = ollama.chat(
         model="deepseek-r1:14b",
         messages=memory
     )
     anwser = response['message']['content']
     # print(response["message"]["thinking"])
-    memory.append({'role': 'user', 'content': message})
+
     try:
         memory.append({'role': 'assistant', 'content': f"{response["message"]}"})
     except:
         print("problem with thinking")
+    try:
+        stasts_extract(anwser)
+    except:
+        print("problem with stats extract")
     return anwser
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class BasicDiscordBot(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def on_ready(self):
-        logger.info(f'Logged in as {self.user} (ID: {self.user.id})')
-        logger.info('------')
+        print(f'Logged in as {self.user} (ID: {self.user.id})')
+        print('------')
 
     async def on_message(self, message):
         # Ignore messages from the bot itself
@@ -130,8 +133,14 @@ class BasicDiscordBot(discord.Client):
                 # Asking AI to generate a response and send it back #
                 #####################################################
                 response = ask_ai(message.content)
+                if len(response) > 2000:
+                    chunks = [response[i:i+2000] for i in range(0, len(response), 2000)]
+                    for chunk in chunks:
+                        await message.reply(chunk)
                 if response:
                     await message.reply(response)
+                else:
+                    await message.reply("I'm sorry, I couldn't generate a response at this time.")  
 
 
 
@@ -140,4 +149,5 @@ class BasicDiscordBot(discord.Client):
 intents = discord.Intents.default()
 intents.message_content = True
 bot = BasicDiscordBot(intents=intents)
-bot.run()
+bot.run(Rile.load(".discord", "txt"))
+print("Bot has stopped running.")
