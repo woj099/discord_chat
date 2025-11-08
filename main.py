@@ -3,43 +3,40 @@
 #   #Add the path to your file_manager package
 # sys.path.append('/home/admin/Projects/git/file')  # The directory containing file_manager folder
 from math import e, inf
+from pstats import Stats
 import discord
 from typing import Optional
 import ollama
 from file_manager import File
-
+from time import time as current_time
 Rile = File("file_manager", "logging_folder", "log_file")
 game_info = File("game")
-Rile.save("", "stat_append", "txt")
 
 file_name = game_info.every_file(2)
 
 
 
 # memory = File()
-memory = [{'role': 'system', 'content': "You are a DM in a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder. after each fight you must tell what items and stats the user gained. there is a second bot that will keep track of the user's stats and inventory. you must inform the user of any changes to their stats or inventory in your responses."}]
+memory = [{'role': 'system', 'content': "You are a DM narrateing a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder. after each fight you must tell what items and stats the user gained. there is a second bot that will keep track of the user's stats and inventory. you must inform the user of any changes to their stats or inventory in your responses. Remember to write exp, mana, health, etc, changes. Try to not be too long in one location, so that story keeps moving."}]
 
 
+stats = {
+    "level": 0,
+    "exp": 0,
+    "exp_to_next_level": 16,
+    "health": 100,
+    "max_health":100,
+    "mana": 10,
+    "max_mana":10
+    }
 
-stats = [
-    {"level": 0},
-    {"exp_now": 0},
-    {"exp_to_next_level": 1},
-    {"class": None},
-    {"divinity": 0},
-    {"health": 100},
-    {"max_health":100},
-    {"mana": 10},
-    {"max_mana":10}
-    ]
-inventory = [
-    {"platinum": 0},
-    {"gold": 0},
-    {"silver": 0},
-    {"bronze": 34},
-    {"iron sword": "basic iron sword"},
-    {"basic clothes": "worn out clothes"},
-    ]
+inventory = {
+    "silver_coins": 2,
+    "copper_coins": 50,
+    "iron_sword": "basic_iron_sword",
+    "basic_clothes": "worn_out_clothes"
+}
+
 
 
 memory.insert(2,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}"})
@@ -50,26 +47,29 @@ def stasts_extract(text: str) -> Optional[str]:
     Chat_response = ollama.chat(
         model="deepseek-r1:14b",
         messages=[{"role": "system", "content": Rile.load("stat_append", "txt")},
-                  {"role": "user", "content": f"stats: {stats}, inventory: {inventory}"}]
+                  {"role": "system", "content": f"stats: {stats}, inventory: {inventory}"},
+                  {"role": "system", "content": text}]
     )
     response_content = Chat_response['message']['content']
+    ###### to delete ######
+    Rile.save(f"{response_content}\n", "statchangetest", "txt", "a")
+    print(response_content)
     try:
-        data = ",".split(response_content)
+        data = response_content.split(",")
         for item in data:
-            info = " ".split(item)
-            for each in stats:
-                if info[0] == "stat":
-                    for each in range(len(stats)):
-                        name = info[1]
-                        if name == stats[each][name]:
-                            stats[each][name] = stats[each][name] + int(info[2])
-                if info[0] == "inv":
-                    for each in inventory:
-                        name = info[1]
-                        if name == inventory[each][name]:
-                            inventory[each][name] = inventory[each][name] + int(info[2])
-                        else:
-                            inventory.append({name: info[2]})
+            info = item.split(" ")
+            if info[0] == "stat":
+                name = info[1]
+                if name in stats:  # Check if stat exists
+                    stats[name] += int(info[2])  # Add to existing value
+                else:
+                    stats[name] = int(info[2])  # Create new stat
+            elif info[0] == "inv":
+                name = info[1]
+                if name in inventory:  # Check if item exists
+                    inventory[name] += int(info[2])  # Add to existing value
+                else:
+                    inventory[name] = info[2]  # Create new item
         return response_content
     except Exception as e:
         print(f"Error extracting stats and inventory: {e}")
@@ -99,7 +99,7 @@ def ask_ai(message):
     )
     anwser = response['message']['content']
     # print(response["message"]["thinking"])
-
+    print(f"stats: {stats}, inventory: {inventory}")
     try:
         memory.append({'role': 'assistant', 'content': f"{response["message"]}"})
     except:
@@ -108,6 +108,8 @@ def ask_ai(message):
         stasts_extract(anwser)
     except:
         print("problem with stats extract")
+        #################### to delete ####################
+    # Rile.save(f"{memory}\n\n\n{response['message']}", f"{current_time()}", "txt", "w", create_dir=True)
     return anwser
 
 # Set up logging
