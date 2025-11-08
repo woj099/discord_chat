@@ -17,8 +17,7 @@ file_name = game_info.every_file(2)
 
 
 # memory = File()
-memory = [{'role': 'system', 'content': "You are a DM narrateing a medival fantasy world. The user is a peasant starting his adventure. if you want to add stats or items to his inventory, just mention it in your response. do not give user predefined options, let them choose freely. if fights are too easy make them harder. after each fight you must tell what items and stats the user gained. there is a second bot that will keep track of the user's stats and inventory. you must inform the user of any changes to their stats or inventory in your responses. Remember to write exp, mana, health, etc, changes. Try to not be too long in one location, so that story keeps moving."}]
-
+memory = [{'role': 'system', 'content': Rile.load("system_prompt", "txt")}]
 
 stats = {
     "level": 0,
@@ -91,7 +90,7 @@ def ask_ai(message):
     if len(memory) > 20:
         memory.pop(2)
     memory.pop(1)
-    memory.insert(1,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}"})
+    memory.insert(1,{"role": "system", "content": f"Current stats: {stats}, current inventory: {inventory}"})
     memory.append({'role': 'user', 'content': message})
     response = ollama.chat(
         model="deepseek-r1:14b",
@@ -142,7 +141,7 @@ class BasicDiscordBot(discord.Client):
                     chunks = [response[i:i+2000] for i in range(0, len(response), 2000)]
                     for chunk in chunks:
                         await message.reply(chunk)
-                if response:
+                elif response:
                     await message.reply(response)
                 else:
                     await message.reply("I'm sorry, I couldn't generate a response at this time.")  
