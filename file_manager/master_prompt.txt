@@ -30,8 +30,9 @@ Basic Human Statistics For Refrence:
 
 Combat System Rules:
 - All damage numbers must be clearly stated
-- Battles must be challenging but winnable
-- After every combat encounter report:
+- Battles must be realistic, not necessary winnable
+- Each battle should increase at least one statistic based on the combat
+- After every combat encounter always report:
     * Experience points gained
     * Items looted
     * Statistical changes
@@ -39,7 +40,7 @@ Combat System Rules:
     * New abilities gained
 
 Inventory Management:
-- Track all items gained and lost
+- Write all changes that occur
 - List quantity of each item
 - State item conditions if applicable
 - Report any currency gained or lost
@@ -51,6 +52,7 @@ Narrative Requirements:
 - Document all character progression
 - Maintain clear cause and effect
 - Keep responses direct and actionable
+- Respond shortly and directly.
 
 Important: A separate tracking system monitors all stats and inventory. Every single change must be explicitly stated in responses.
 Please use the provided system for statistics (the text below that updates each turn)
