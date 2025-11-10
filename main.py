@@ -17,7 +17,7 @@ file_name = game_info.every_file(2)
 
 
 # memory = File()
-memory = [{'role': 'system', 'content': Rile.load("system_prompt", "txt")}]
+memory = [{'role': 'system', 'content': Rile.load("master_prompt", "txt")}]
 
 stats = {
     "level": 0,
@@ -26,8 +26,33 @@ stats = {
     "health": 100,
     "max_health":100,
     "mana": 10,
-    "max_mana":10
+    "max_mana":10,
+    "hp_regeneration_per_hour": 10,
+    "movement_speed_meter_per_second": 6,
+    "attack_damage": 10,
+    "attack_speed_per_second": 0.5,
+    "physical_defense": 1,
+    "magic_defense": 1,
+    "mana_regeneration_per_hour": 1,
+    "mana_output_per_second": 1,
+    "mana_control_in_%": 5,
+    "iq_score": 80,
+    "divinity_rating": 0
     }
+
+# - Health Points (HP): 100/100 maximum
+# - HP Regeneration: 10/hour
+# - Movement Speed: 6 meters/second
+# - Attack Damage: 10
+# - Attack Speed: 0.5 per second
+# - Physical Defense: 1
+# - Magic Defense: 1
+# - Mana Pool: 10/10
+# - Mana Regeneration: 1/hour
+# - Mana Output: 1/second
+# - Mana Control: 5% (logarithmic scale 10% novice 100% above god)
+# - IQ Score: 80
+# - Divinity Rating: 0
 
 inventory = {
     "silver_coins": 2,
@@ -44,7 +69,7 @@ memory.insert(2,{"role": "system", "content": f"stats: {stats}, inventory: {inve
 def stasts_extract(text: str) -> Optional[str]:
     global stats, inventory
     Chat_response = ollama.chat(
-        model="deepseek-r1:14b",
+        model="gpt-oss:20b",
         messages=[{"role": "system", "content": Rile.load("stat_append", "txt")},
                   {"role": "system", "content": f"stats: {stats}, inventory: {inventory}"},
                   {"role": "system", "content": text}]
@@ -76,7 +101,7 @@ def stasts_extract(text: str) -> Optional[str]:
 
 def information_extract(text: str) -> Optional[str]:
     response = ollama.chat(
-        model="deepseek-r1:14b",
+        model="gpt-oss:20b",
         messages=[{"role": "system", "content": "Extract any information about locations, characters, enemies, or items mentioned in the following text. The output should a CSV file with the following format: '[Place/character/enemy] [information],[Place/character/enemy] [information],...'"},
                   {"role": "user", "content": text}]
     )
@@ -93,7 +118,7 @@ def ask_ai(message):
     memory.insert(1,{"role": "system", "content": f"Current stats: {stats}, current inventory: {inventory}"})
     memory.append({'role': 'user', 'content': message})
     response = ollama.chat(
-        model="deepseek-r1:14b",
+        model="gpt-oss:20b",
         messages=memory
     )
     anwser = response['message']['content']
