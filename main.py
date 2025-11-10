@@ -2,6 +2,7 @@
 # import os
 #   #Add the path to your file_manager package
 # sys.path.append('/home/admin/Projects/git/file')  # The directory containing file_manager folder
+from logging import info
 from math import e, inf
 from pstats import Stats
 import discord
@@ -11,7 +12,6 @@ from file_manager import File
 from time import time as current_time
 Rile = File("file_manager", "logging_folder", "log_file")
 game_info = File("game")
-
 file_name = game_info.every_file(2)
 
 
@@ -39,7 +39,6 @@ stats = {
     "iq_score": 80,
     "divinity_rating": 0
     }
-
 # - Health Points (HP): 100/100 maximum
 # - HP Regeneration: 10/hour
 # - Movement Speed: 6 meters/second
@@ -61,7 +60,15 @@ inventory = {
     "basic_clothes": "worn_out_clothes"
 }
 
-
+spells = {
+    "fire": {
+        "mana_cost": 1,
+        "damage": 5,
+        "min_mana_control_in_%": 5,
+        "min_mana_output_per_second": 1
+    }
+}
+    
 
 memory.insert(2,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}"})
 
@@ -75,6 +82,7 @@ def stasts_extract(text: str) -> Optional[str]:
                   {"role": "system", "content": text}]
     )
     response_content = Chat_response['message']['content']
+
     ###### to delete ######
     Rile.save(f"{response_content}\n", "statchangetest", "txt", "a")
     print(response_content)
@@ -82,18 +90,36 @@ def stasts_extract(text: str) -> Optional[str]:
         data = response_content.split(",")
         for item in data:
             info = item.split(" ")
+            
             if info[0] == "stat":
                 name = info[1]
                 if name in stats:  # Check if stat exists
                     stats[name] += int(info[2])  # Add to existing value
-                else:
+                elif info[2].lower() != "pop":
                     stats[name] = int(info[2])  # Create new stat
+                else:
+                    del stats[name]  # Remove stat if 'pop' is specified
+                    
             elif info[0] == "inv":
                 name = info[1]
                 if name in inventory:  # Check if item exists
                     inventory[name] += int(info[2])  # Add to existing value
-                else:
+                elif info[2].lower() != "pop":
                     inventory[name] = info[2]  # Create new item
+                else:
+                    del inventory[name]  # Remove item if 'pop' is specified
+                    
+            elif info[0] == "spell":
+                name = info[1]
+                if name in spells:  # Check if spell exists
+                    # Update existing spell attributes
+                    for key, value in spells[name].items():
+                        spells[name][key] += int(info[2])  # Example logic; adjust as needed
+                elif info[2].lower() != "pop":
+                    spells[name] = {}  # Create new spell; add attributes as needed
+                else:
+                    del spells[name]  # Remove spell if 'pop' is specified
+                    
         return response_content
     except Exception as e:
         print(f"Error extracting stats and inventory: {e}")
@@ -128,12 +154,6 @@ def ask_ai(message):
         memory.append({'role': 'assistant', 'content': f"{response["message"]}"})
     except:
         print("problem with thinking")
-    try:
-        stasts_extract(anwser)
-    except:
-        print("problem with stats extract")
-        #################### to delete ####################
-    # Rile.save(f"{memory}\n\n\n{response['message']}", f"{current_time()}", "txt", "w", create_dir=True)
     return anwser
 
 # Set up logging
