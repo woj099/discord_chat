@@ -2,8 +2,6 @@
 # import os
 #   #Add the path to your file_manager package
 # sys.path.append('/home/admin/Projects/git/file')  # The directory containing file_manager folder
-from logging import info
-from math import e, inf
 from pstats import Stats
 import discord
 from typing import Optional
@@ -65,12 +63,13 @@ spells = {
         "mana_cost": 1,
         "damage": 5,
         "min_mana_control_in_%": 5,
-        "min_mana_output_per_second": 1
+        "min_mana_output_per_second": 1,
+        "description": "a_basic_spell_that_creates_a_small_fire"
     }
 }
     
 
-memory.insert(2,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}"})
+memory.insert(2,{"role": "system", "content": f"stats: {stats}, inventory: {inventory}, spells: {spells}"})
 
 
 def stasts_extract(text: str) -> Optional[str]:
@@ -78,7 +77,7 @@ def stasts_extract(text: str) -> Optional[str]:
     Chat_response = ollama.chat(
         model="gpt-oss:20b",
         messages=[{"role": "system", "content": Rile.load("stat_append", "txt")},
-                  {"role": "system", "content": f"stats: {stats}, inventory: {inventory}"},
+                  {"role": "system", "content": f"stats: {stats}, inventory: {inventory}, spells: {spells}"},
                   {"role": "system", "content": text}]
     )
     response_content = Chat_response['message']['content']
@@ -94,16 +93,16 @@ def stasts_extract(text: str) -> Optional[str]:
             if info[0] == "stat":
                 name = info[1]
                 if name in stats:  # Check if stat exists
-                    stats[name] += int(info[2])  # Add to existing value
+                    stats[name] += float(info[2])  # Add to existing value
                 elif info[2].lower() != "pop":
-                    stats[name] = int(info[2])  # Create new stat
+                    stats[name] = float(info[2])  # Create new stat
                 else:
                     del stats[name]  # Remove stat if 'pop' is specified
                     
             elif info[0] == "inv":
                 name = info[1]
                 if name in inventory:  # Check if item exists
-                    inventory[name] += int(info[2])  # Add to existing value
+                    inventory[name] += float(info[2])  # Add to existing value
                 elif info[2].lower() != "pop":
                     inventory[name] = info[2]  # Create new item
                 else:
@@ -111,10 +110,13 @@ def stasts_extract(text: str) -> Optional[str]:
                     
             elif info[0] == "spell":
                 name = info[1]
+                key = info[2]
                 if name in spells:  # Check if spell exists
                     # Update existing spell attributes
-                    for key, value in spells[name].items():
-                        spells[name][key] += int(info[2])  # Example logic; adjust as needed
+                    try:
+                        spells[name][key] += float(info[3])  # Example logic; adjust as needed
+                    except:
+                        spells[name][key] = info[3]
                 elif info[2].lower() != "pop":
                     spells[name] = {}  # Create new spell; add attributes as needed
                 else:
@@ -141,15 +143,16 @@ def ask_ai(message):
     if len(memory) > 20:
         memory.pop(2)
     memory.pop(1)
-    memory.insert(1,{"role": "system", "content": f"Current stats: {stats}, current inventory: {inventory}"})
+    memory.insert(1,{"role": "system", "content": f"Current stats: {stats}, current inventory: {inventory}, current spells: {spells}"})
     memory.append({'role': 'user', 'content': message})
     response = ollama.chat(
         model="gpt-oss:20b",
         messages=memory
     )
     anwser = response['message']['content']
+    stasts_extract(response['message']["content"])
     # print(response["message"]["thinking"])
-    print(f"stats: {stats}, inventory: {inventory}")
+    print(f"stats: {stats}, inventory: {inventory}, spells: {spells}")
     try:
         memory.append({'role': 'assistant', 'content': f"{response["message"]}"})
     except:

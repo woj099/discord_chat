@@ -4,10 +4,12 @@ Your output MUST be only a single plain-text line containing zero or more comma-
 Entry formats (exactly):
 - stat <key> <delta>
 - inv <key> <delta>
+- spell <key> <delta>
 
 Rules:
+- for spell use two keys, first to access the spell and second to access the atribute: dict[str, dict[str, int]]
 - <key> must match the dictionary key name exactly (case-sensitive) as shown in the provided `stats` / `inventory`.
-- <delta> must be an integer (use negative for decreases). Leading + is allowed but optional.
+- <delta> must be an integer (use negative for decreases). Leading + is allowed but optional. As an additional option, the special token `pop` is allowed as the <delta> to indicate the item should be removed from inventory entirely.
 - Separate entries with "," (comma). No trailing comma or extra whitespace.
 - If there are no changes, output an empty string (no spaces, no newline other than the single-line output).
 - If player gains new item or new stat is needed, and it is not already in inventory/stats. You can add it like any other item/stat.
@@ -15,7 +17,7 @@ Rules:
 - Only output change in statistics and not current amount.
 - After level up, multiply the exp_to_next_level by two.
 - Only write what is certain. So shop items and offers are not counted.
-
+- Do not put **anwser:** or (stat exp 16).
 Examples (valid outputs):
 
 after player killed a goblin and got a health potion from him but in process recevied 5 hp damage:
@@ -24,12 +26,29 @@ after player bought a blue gem for ten silver coins:
 stat silver_coins -10,inv blue_gem a_gem_that_emits_blue_light
 when the main AI deceided that player needs a mana regen stat and applied it:
 stat mana_regen 5,stat mana 5
+after player learns new spell "stone bullet" with one mana cost, three damage, 4% mana control and 1 minimal mana per second :
+spell  stone_bullet create,spell stone_bullet mana_cost 1,spell stone_bullet damage 5,spell stone_bullet min_mana_control_in_% 5,spell stone_bullet min_mana_output_per_second 1,spell stone_bullet description a_basic_spell_that_shoots_a_pebble_at_high_speed
+after player gets a summon undead spell:
+spell summon_undead new,spell summon_undead mana_cost 20,spell summon_undead min_mana_control_in_% 25,spell summon_undead min_mana_output_per_second 2,spell summon_undead description a_spell_that_summons_undead_zombie_that_has_statistics_half_of_human_adult
+after player upgraded a spell by frequent usage:
+spell stone_bullet damage 2
 
 Some other examples:
-stat gold_coins 15,inv staff_of_magic_missiles 1,inv spell_scroll_light 1
-stat exp 16,inv health_potion 1,inv gold_coins 15,inv scroll_of_identify 1
+stat gold_coins 15,inv staff_of_magic_missiles 1
+stat exp 16,inv health_potion 1,inv gold_coins 15
 stat health 20,stat exp 16,stat exp_to_next_level 16,inv gold_coins 5,inv steel_longsword 1
 
+example of a spell JSON structure:
+"fire": {
+    "mana_cost": 1,
+    "damage": 5,
+    "min_mana_control_in_%": 5,
+    "min_mana_output_per_second": 1,
+    "description": "a_basic_spell_that_creates_a_small_fire"
+}
+
+Use "stat" for change in statistics of the player and "inv" for change in inventory.
+follow the format of  "[stat/inv] [name] [description/change in value],[stat/inv] [name] [description/change in value]"
 those are just examples. the text from which you need to extract this information is below.
-You need to use comma to seperate value and for words with spaces use "_" insted of " ". any other method will be denaied.
+You need to use comma to seperate value and for words with spaces use "_" insted of " ". any other method will be deleted.
 Always base changes in refrence to the provided `stats` and `inventory` and the message's content, both are below.
